@@ -204,11 +204,15 @@
 import { openWeatherMapKey } from "./keys.js";
 const curTemp = document.querySelector("#currentTemp");
 const wSummary = document.querySelector("#summary");
+const location = document.querySelector("#location");
+
+const wpCurrent = document.querySelector("#wpCurrent");
 
 const dayDate = document.querySelector("#dayDate");
 const timeDate = document.querySelector("#timeDate");
 
 const weatherImg = document.querySelector("#weatherImg");
+const searchForm = document.querySelector("#citySearchForm");
 
 const wDay = [
   "Sunday",
@@ -250,15 +254,58 @@ async function fetchOpenWeatherMap(params) {
   }
 }
 
+searchForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  const city = this.children[0].value;
+  fetchWeatherCity(city, openWeatherMapKey);
+});
+
+async function fetchWeatherCity(city, key) {
+  const config = {
+    q: city,
+    appid: key,
+    units: "metric",
+  };
+
+  const api = `https://api.openweathermap.org/data/2.5/weather`;
+
+  try {
+    const response = await axios.get(api, { params: config });
+    updateSearchUI(response.data);
+    searchForm.children[0].value = "";
+  } catch (e) {
+    alert("There is no such city, please try again.");
+    console.error(e);
+  }
+}
+
+function updateSearchUI(data) {
+  location.innerHTML = data.name;
+  curTemp.innerHTML = data.main.feels_like;
+  wSummary.innerHTML = data.weather[0].description;
+  const weatherID = data.weather[0].id;
+
+  if (weatherID < 600 && weatherID >= 500) {
+    // rain.png
+    weatherImg.setAttribute("src", "./images/Rain.png ");
+  }
+
+  if (weatherID === 800) {
+    // clear.png
+    weatherImg.setAttribute("src", "./images/SunnyDay.png");
+  }
+
+  if (weatherID > 800) {
+    // mostly sunny
+    weatherImg.setAttribute("src", "./images/MostlySunny.png ");
+  }
+}
+
 // dom update
 function updateUI(data) {
-  const wImgAttr = weatherImg.getAttribute("src");
-
   curTemp.innerHTML = data.current.feels_like;
   wSummary.innerHTML = data.current.weather[0].description;
   const weatherID = data.current.weather[0].id;
-
-  console.log(wImgAttr);
 
   if (weatherID < 600 && weatherID >= 500) {
     // rain.png
