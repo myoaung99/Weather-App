@@ -201,44 +201,106 @@
 //     alert("Sorry, your browser does not support geolocation services.");
 // }
 
-const wDay = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const wMonth = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+import { openWeatherMapKey } from "./keys.js";
+const curTemp = document.querySelector("#currentTemp");
+const wSummary = document.querySelector("#summary");
+
+const dayDate = document.querySelector("#dayDate");
+const timeDate = document.querySelector("#timeDate");
+
+const weatherImg = document.querySelector("#weatherImg");
+
+const wDay = [
+  "Sunday",
+  "Monday",
+  "Tueday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ];
 
-const iconValue = {
-  CLEARDAY: "clear-day",
-  CLEARNIGHT: "clear-night",
-  RAIN: "rain",
-  SNOW: "snow",
-  SLEET: "sleet",
-  WIND: "wind",
-  FOG: "fog",
-  CLOUDY: "cloudy",
-  PARTLY_CLOUDY_DAY: "partly-cloudy-day",
-  PARTLY_CLOUDY_NIGHT: "partly-cloudy-night",
-};
+const BASE_URL = "https://api.openweathermap.org/data/2.5/onecall";
+
+function updateDateTime() {
+  const date = new Date();
+  const day = wDay[date.getDay()];
+  const time = `${date.getHours()}:${date.getMinutes()}`;
+
+  dayDate.innerHTML = day;
+  timeDate.innerHTML = time;
+}
+
+async function fetchOpenWeatherMap(params) {
+  const requestParams = {
+    lat: params.latitude,
+    lon: params.longitude,
+    appid: params.key,
+    units: "metric",
+  };
+
+  try {
+    const response = await axios.get(BASE_URL, { params: requestParams });
+
+    console.log(response.data);
+
+    updateUI(response.data);
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
+// dom update
+function updateUI(data) {
+  const wImgAttr = weatherImg.getAttribute("src");
+
+  curTemp.innerHTML = data.current.feels_like;
+  wSummary.innerHTML = data.current.weather[0].description;
+  const weatherID = data.current.weather[0].id;
+
+  console.log(wImgAttr);
+
+  if (weatherID < 600 && weatherID >= 500) {
+    // rain.png
+    weatherImg.setAttribute("src", "./images/Rain.png ");
+  }
+
+  if (weatherID === 800) {
+    // clear.png
+    weatherImg.setAttribute("src", "./images/SunnyDay.png");
+  }
+
+  if (weatherID > 800) {
+    // mostly sunny
+    weatherImg.setAttribute("src", "./images/MostlySunny.png ");
+  }
+}
 
 // find the late and long of the user's location
 function initGeolocation() {
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(success, fail);
+    navigator.geolocation.getCurrentPosition(success, fail, {
+      enableHighAccuracy: true,
+    });
   } else {
     alert("Sorry, your browser does not upport geolocation services.");
   }
 }
 
 function success(position) {
-  // add keys to the api.
+  const params = {
+    key: openWeatherMapKey,
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude,
+  };
+
+  fetchOpenWeatherMap(params);
 }
+function fail(error) {
+  console.error(error);
+}
+
+window.addEventListener("load", function () {
+  initGeolocation();
+  updateDateTime();
+});
